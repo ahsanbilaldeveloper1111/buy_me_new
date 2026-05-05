@@ -1,0 +1,52 @@
+{
+  "name": "nextjs-postgres-advanced-crud",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "prisma generate",
+    "predev": "npm run prisma:generate",
+    "prebuild": "npm run prisma:generate",
+    "prestart": "npm run prisma:generate",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck",
+    "docker:dev": "docker compose up --build next-dev postgres",
+    "docker:dev:down": "docker compose down",
+    "docker:prod": "docker compose --profile production up --build next-prod postgres",
+    "docker:prod:down": "docker compose --profile production down",
+    "docker:db": "docker compose up -d postgres",
+    "docker:db:down": "docker compose stop postgres",
+    "docker:logs": "docker compose logs -f next-dev postgres",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "db:migrate": "npm run prisma:migrate:deploy",
+    "db:studio": "npm run prisma:studio"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "latest",
+    "@prisma/client": "latest",
+    "@tanstack/react-query": "latest",
+    "@tanstack/react-query-devtools": "latest",
+    "jsonwebtoken": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "pg": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/jsonwebtoken": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "prisma": "latest",
+    "typescript": "latest"
+  }
+}

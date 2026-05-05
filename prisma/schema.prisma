@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  tasks        Task[]
+
+  @@map("users")
+  @@index([email], map: "idx_users_email")
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  title       String
+  description String?
+  status      String    @default("todo")
+  priority    Int       @default(3)
+  dueDate     DateTime? @map("due_date")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+  @@index([status], map: "idx_tasks_status")
+  @@index([userId], map: "idx_tasks_user_id")
+  @@index([priority], map: "idx_tasks_priority")
+  @@index([dueDate], map: "idx_tasks_due_date")
+}
