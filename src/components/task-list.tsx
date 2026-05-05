@@ -4,8 +4,8 @@ import type { Task } from "@/models/task";
 
 type TaskListProps = {
   tasks: Task[];
-  onDelete: (id: number) => Promise<void> | void;
-  onComplete: (id: number) => Promise<void> | void;
+  onDelete: (id: number) => Promise<unknown> | void;
+  onComplete: (id: number) => Promise<unknown> | void;
 };
 
 export function TaskList({ tasks, onDelete, onComplete }: TaskListProps) {
