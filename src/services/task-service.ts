@@ -1,4 +1,4 @@
-import { Prisma } from "@/generated/prisma";
+import { Prisma } from "@/generated/prisma/client";
 
 import { db } from "@/lib/db";
 import type { CreateTaskInput, Task, TaskAnalytics, UpdateTaskInput } from "@/models/task";

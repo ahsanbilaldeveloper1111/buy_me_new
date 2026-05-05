@@ -6,7 +6,7 @@ ENV DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
 RUN apk add --no-cache openssl
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
-RUN npm install --ignore-scripts
+RUN npm ci --ignore-scripts
 
 FROM node:22-alpine AS builder
 WORKDIR /app
@@ -26,5 +26,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
+COPY docker/entrypoint.prod.sh /usr/local/bin/entrypoint.prod.sh
+RUN chmod +x /usr/local/bin/entrypoint.prod.sh
 EXPOSE 3000
-CMD ["sh", "-c", "npm run prisma:migrate:deploy && npm run start"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.prod.sh"]
+CMD ["npm", "run", "start"]
+
