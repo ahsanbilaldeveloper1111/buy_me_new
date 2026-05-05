@@ -37,9 +37,9 @@ export async function listTasks(userId: number) {
   });
 
   return tasks
-    .sort((a: { status: Task["status"] }, b: { status: Task["status"] }) => {
-      const rank: Record<Task["status"], number> = { in_progress: 1, todo: 2, done: 3 };
-      return rank[a.status] - rank[b.status];
+    .sort((a, b) => {
+      const rank: Record<string, number> = { in_progress: 1, todo: 2, done: 3 };
+      return (rank[a.status] ?? 99) - (rank[b.status] ?? 99);
     })
     .map(mapTask);
 }
