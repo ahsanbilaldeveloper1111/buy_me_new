@@ -1,7 +1,19 @@
 import { Prisma } from "@/generated/prisma/client";
 
 import { db } from "@/lib/db";
+import { getRedis, invalidateTaskCaches, publishUserEvent, taskCacheKeys } from "@/lib/redis";
 import type { CreateTaskInput, Task, TaskAnalytics, UpdateTaskInput } from "@/models/task";
+
+const LIST_TTL_SEC = 30;
+const ANALYTICS_TTL_SEC = 20;
+
+async function notifyTaskSideEffects(
+  userId: number,
+  payload: Record<string, unknown>
+): Promise<void> {
+  await invalidateTaskCaches(userId);
+  await publishUserEvent(userId, payload);
+}
 
 function mapTask(row: {
   id: number;
@@ -31,17 +43,37 @@ export async function initTaskTable() {
 }
 
 export async function listTasks(userId: number) {
+  const redis = getRedis();
+  if (redis) {
+    try {
+      const cached = await redis.get(taskCacheKeys.list(userId));
+      if (cached) return JSON.parse(cached) as Task[];
+    } catch {
+      // fall through to DB
+    }
+  }
+
   const tasks = await db.task.findMany({
     where: { userId },
     orderBy: [{ status: "asc" }, { priority: "desc" }, { createdAt: "desc" }]
   });
 
-  return tasks
+  const mapped = tasks
     .sort((a, b) => {
       const rank: Record<string, number> = { in_progress: 1, todo: 2, done: 3 };
       return (rank[a.status] ?? 99) - (rank[b.status] ?? 99);
     })
     .map(mapTask);
+
+  if (redis) {
+    try {
+      await redis.setex(taskCacheKeys.list(userId), LIST_TTL_SEC, JSON.stringify(mapped));
+    } catch {
+      // ignore cache write errors
+    }
+  }
+
+  return mapped;
 }
 
 export async function getTaskById(id: number, userId: number) {
@@ -62,7 +94,9 @@ export async function createTask(input: CreateTaskInput, userId: number) {
     }
   });
 
-  return mapTask(task);
+  const mapped = mapTask(task);
+  await notifyTaskSideEffects(userId, { type: "task.created", task: mapped });
+  return mapped;
 }
 
 export async function updateTask(id: number, input: UpdateTaskInput, userId: number) {
@@ -80,17 +114,30 @@ export async function updateTask(id: number, input: UpdateTaskInput, userId: num
     }
   });
 
-  return mapTask(task);
+  const mapped = mapTask(task);
+  await notifyTaskSideEffects(userId, { type: "task.updated", task: mapped });
+  return mapped;
 }
 
 export async function deleteTask(id: number, userId: number) {
   const existing = await db.task.findFirst({ where: { id, userId } });
   if (!existing) return false;
   await db.task.delete({ where: { id } });
+  await notifyTaskSideEffects(userId, { type: "task.deleted", taskId: id });
   return true;
 }
 
 export async function getTaskAnalytics(userId: number): Promise<TaskAnalytics> {
+  const redis = getRedis();
+  if (redis) {
+    try {
+      const cached = await redis.get(taskCacheKeys.analytics(userId));
+      if (cached) return JSON.parse(cached) as TaskAnalytics;
+    } catch {
+      // fall through
+    }
+  }
+
   const result = await db.$queryRaw<
     Array<{
       total_tasks: number;
@@ -142,11 +189,21 @@ export async function getTaskAnalytics(userId: number): Promise<TaskAnalytics> {
 
   const row = result[0];
 
-  return {
+  const analytics: TaskAnalytics = {
     totalTasks: row.total_tasks,
     doneTasks: row.done_tasks,
     overdueTasks: row.overdue_tasks,
     topPriorities: row.top_priorities,
     recentCompletedTitles: row.recent_completed_titles
   };
+
+  if (redis) {
+    try {
+      await redis.setex(taskCacheKeys.analytics(userId), ANALYTICS_TTL_SEC, JSON.stringify(analytics));
+    } catch {
+      // ignore
+    }
+  }
+
+  return analytics;
 }

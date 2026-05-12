@@ -1,6 +1,6 @@
 import "./globals.scss";
 
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 
 import { Providers } from "./providers";
@@ -25,6 +25,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <Link href="/ssg/nextjs?level=beginner">SSG Params</Link>
                 <Link href="/isr">ISR</Link>
                 <Link href="/ssr">SSR</Link>
+                <Link href={"/realtime" as Route}>Realtime</Link>
                 <Link href="/auth">Auth</Link>
               </nav>
             </header>

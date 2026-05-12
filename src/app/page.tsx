@@ -1,3 +1,6 @@
+import type { Route } from "next";
+import Link from "next/link";
+
 export default function HomePage() {
   return (
     <section className="space-y-3">
@@ -10,6 +13,13 @@ export default function HomePage() {
         <li>ISR page: Cached page regenerated every 60 seconds.</li>
         <li>SSR page: Fresh request-time data from PostgreSQL.</li>
         <li>API routes: explicit status handling (401/400/404/201/204).</li>
+        <li>
+          Realtime: Redis cache + pub/sub, SSE stream, Socket.IO gateway, server actions (
+          <Link className="underline" href={"/realtime" as Route}>
+            /realtime
+          </Link>
+          ).
+        </li>
       </ul>
     </section>
   );
